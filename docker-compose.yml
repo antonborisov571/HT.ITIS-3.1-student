@@ -1,25 +1,53 @@
 version: '3.8'
+
 services:
   dotnet_postgres:
     image: postgres:alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: homework_database
+    ports:
+      - 5432:5432
+    volumes:
+      - dotnet_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 1s
+      retries: 5
     
-  dotnet_rabbitmq:
-    image: rabbitmq:3-alpine
+  #dotnet_rabbitmq:
+  #  image: rabbitmq:3-alpine
     
-  dotnet_minio:
-    image: minio/minio:latest
+  #dotnet_minio:
+  #  image: minio/minio:latest
     
-  dotnet_mongodb:
-    image: mongo:latest
+  #dotnet_mongodb:
+  #  image: mongo:latest
     
-  dotnet_jaeger:
-    image: jaegertracing/all-in-one:latest
+  #dotnet_jaeger:
+  #  image: jaegertracing/all-in-one:latest
     
   dotnet_main:
     image: dotnet-web
+    build:
+      context: .
+      dockerfile: ./Dotnet.Homeworks.MainProject/Dockerfile
+    ports:
+      - 5065:8080
+    depends_on:
+      dotnet_postgres:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: Host=db;Username=postgres;Password=postgres;Database=homework_database
     
-  dotnet_mailing:
-    image: dotnet-web
     
-  dotnet_storage:
-    image: dotnet-web
+  #dotnet_mailing:
+  #  image: dotnet-web
+    
+  #dotnet_storage:
+  #  image: dotnet-web
+
+volumes:
+  dotnet_postgres_data:
