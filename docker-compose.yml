@@ -1,25 +1,68 @@
 version: '3.8'
+
 services:
   dotnet_postgres:
     image: postgres:alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: homework_database
+    ports:
+      - 5432:5432
+    volumes:
+      - dotnet_postgres_data:/var/lib/postgresql/data
     
   dotnet_rabbitmq:
     image: rabbitmq:3-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
     
-  dotnet_minio:
-    image: minio/minio:latest
+  #dotnet_minio:
+  #  image: minio/minio:latest
     
-  dotnet_mongodb:
-    image: mongo:latest
+  #dotnet_mongodb:
+  #  image: mongo:latest
     
-  dotnet_jaeger:
-    image: jaegertracing/all-in-one:latest
+  #dotnet_jaeger:
+  #  image: jaegertracing/all-in-one:latest
     
   dotnet_main:
     image: dotnet-web
+    build:
+      context: .
+      dockerfile: Dotnet.Homeworks.MainProject/Dockerfile
+    ports:
+      - 5065:8080
+    depends_on:
+      - dotnet_postgres
+      - dotnet_rabbitmq
+    environment:
+      ConnectionStrings__Default: Host=db;Username=postgres;Password=postgres;Database=homework_database
+      RabbitMqConfig__Username: admin
+      RabbitMqConfig__Password: admin
+      RabbitMqConfig__Hostname: localhost
     
   dotnet_mailing:
     image: dotnet-web
+    build:
+      context: .
+      dockerfile: Dotnet.Homeworks.Mailing.API/Dockerfile
+    ports: 
+      - 5115:8081
+    depends_on:
+      - dotnet_rabbitmq
+    environment:
+      EmailConfig__Email: borisov.as2015@yandex.ru
+      EmailConfig__Password: arigudeqaaztkkfn
+      EmailConfig__Host: smtp.yandex.ru
+      EmailConfig__Port: 465
+      RabbitMqConfig__Username: admin
+      RabbitMqConfig__Password: admin
+      RabbitMqConfig__Hostname: localhost
     
-  dotnet_storage:
-    image: dotnet-web
+  #dotnet_storage:
+  #  image: dotnet-web
+
+volumes:
+  dotnet_postgres_data:
